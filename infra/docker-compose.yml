@@ -1,5 +1,7 @@
 # /var/www/logistics/infra/docker-compose.yml
 
+version: "3.8"
+
 services:
   api:
     build:
@@ -9,21 +11,34 @@ services:
       - ../api:/var/www/html:delegated
     ports:
       - "8000:80"               # Host-Port 8000 → Container-Port 80 (Apache)
+    env_file:
+      - ../api/.env             # Umgebungsvariablen aus api/.env laden
     environment:
       APP_ENV: dev
       DATABASE_URL: "pgsql://logistics:Ms.02082019!!@db:5432/logistics"
     depends_on:
       - db
+    networks:
+      - logistics-network
 
   db:
     image: postgres:15
+    ports:
+      - "5432:5432"             # Host-Port 5432 → Container-Port 5432 (Postgres)
     environment:
       POSTGRES_DB: logistics
       POSTGRES_USER: logistics
       POSTGRES_PASSWORD: Ms.02082019!!
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - logistics-network
 
 volumes:
   db-data:
+
+networks:
+  logistics-network:
+    driver: bridge
+
 

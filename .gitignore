@@ -1,0 +1,13 @@
+# PHP / Composer
+/vendor/
+/var/
+/.env
+.env.*
+# Docker-Volumes
+/infra/db-data/
+/infra/nginx/cache/
+/infra/nginx/logs/
+# System-Dateien
+.DS_Store
+.idea/
+.vscode/

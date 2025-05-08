@@ -1,0 +1,15 @@
+# config/routes.yaml
+
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+refresh_jwt:
+    path: /api/token/refresh
+    methods: [POST]
+
+login_check:
+    path: /api/login_check
+    methods: [POST]

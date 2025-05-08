@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    Options -MultiViews
+    RewriteEngine On
+
+    # Existierende Dateien/Ordner passieren lassen
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Alles andere auf index.php umleiten
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>

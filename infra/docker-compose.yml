@@ -1,0 +1,29 @@
+# /var/www/logistics/infra/docker-compose.yml
+
+services:
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    volumes:
+      - ../api:/var/www/html:delegated
+    ports:
+      - "8000:80"               # Host-Port 8000 → Container-Port 80 (Apache)
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "pgsql://logistics:Ms.02082019!!@db:5432/logistics"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: logistics
+      POSTGRES_USER: logistics
+      POSTGRES_PASSWORD: Ms.02082019!!
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+

@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-// hier die InMemoryUser importieren:
 use Symfony\Component\Security\Core\User\InMemoryUser;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
@@ -21,6 +20,7 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
 
     public function supports(Request $request): ?bool
     {
+        // Wir unterstützen jede Anfrage, die den Header X-API-KEY enthält
         return $request->headers->has('X-API-KEY');
     }
 
@@ -37,10 +37,11 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
                 ]);
 
                 if (!$apiKey) {
+                    // schlägt Auth ab
                     throw new AuthenticationException('Invalid API Key');
                 }
 
-                // InMemoryUser statt App\Entity\User
+                // geben wir einen InMemoryUser mit ROLE_API zurück
                 return new InMemoryUser('api_client', null, ['ROLE_API']);
             })
         );
@@ -51,7 +52,8 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
         TokenInterface $token,
         string $firewallName
     ): ?Response {
-        return null; // weiter zur Controller-Action
+        // bei Erfolg einfach weiter zur Controller-Action
+        return null;
     }
 
     public function onAuthenticationFailure(
@@ -60,7 +62,7 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
     ): JsonResponse {
         return new JsonResponse(
             ['error' => 'API Key Authentication Failed'],
-            JsonResponse::HTTP_UNAUTHORIZED
+            Response::HTTP_UNAUTHORIZED
         );
     }
 }

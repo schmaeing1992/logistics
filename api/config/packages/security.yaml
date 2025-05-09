@@ -2,7 +2,7 @@
 
 security:
     # ==================================
-    # Passwort-Hashing
+    # Passwort-Hashing (für evtl. App-User)
     # ==================================
     password_hashers:
         App\Entity\User: 'auto'
@@ -11,18 +11,9 @@ security:
     # Benutzer- & API-Key-Provider
     # ==================================
     providers:
+        # Wir verwenden als einzigen Provider unseren ApiKeyUserProvider
         api_key_provider:
-            id: App\Repository\ApiKeyRepository
-
-        app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: email
-
-        # Chain-Provider kombiniert API-Key und User-Provider
-        chain_provider:
-            chain:
-                providers: [api_key_provider, app_user_provider]
+            id: App\Security\ApiKeyUserProvider
 
     # ==================================
     # Firewalls
@@ -30,45 +21,27 @@ security:
     firewalls:
         # Dev-Firewall (Profiler, Assets)
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
-
-        # Login-Firewall für JWT-Login
-        login:
-            pattern: ^/api/login_check
-            stateless: true
-            provider: app_user_provider
-            json_login:
-                check_path:       /api/login_check
-                username_path:    email
-                password_path:    password
-                success_handler:  lexik_jwt_authentication.handler.authentication_success
-                failure_handler:  lexik_jwt_authentication.handler.authentication_failure
+            pattern:   ^/(_(profiler|wdt)|css|images|js)/
+            security:  false
 
         # Haupt-Firewall für alle API-Routen
         api:
             pattern:   ^/api
             stateless: true
-            provider:  chain_provider
+            provider:  api_key_provider
 
-            # JWT-Authentifizierung via LexikJWT
-            jwt: ~
-
-            # API-Key-Authentifizierung
+            # Nur unser API-Key-Authenticator
             custom_authenticators:
                 - App\Security\ApiKeyAuthenticator
 
-        # (Optional) klassische Web-UI
+        # (Optional) klassische Web-UI / andere Bereiche
         main:
-            lazy: true
-            provider: app_user_provider
+            lazy:     true
+            provider: api_key_provider
 
     # ==================================
     # Zugriffskontrolle
     # ==================================
     access_control:
-        # Anonymen Login erlauben
-        - { path: ^/api/login_check, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-
-        # Andere API-Endpunkte erfordern Authentifizierung
-        - { path: ^/api,            roles: IS_AUTHENTICATED_FULLY }
+        # Alles unter /api erfordert ROLE_API (via X-API-KEY)
+        - { path: ^/api, roles: ROLE_API }

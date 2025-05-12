@@ -12,10 +12,17 @@ RUN apt-get update && apt-get install -y \
 
 # GD mit FreeType, JPEG und PNG nachinstallieren
 RUN apt-get update \
-    && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+ && apt-get install -y libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install -j$(nproc) gd \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# DejaVu-Sans TTF-Font für TrueType-Text in GD installieren
+RUN apt-get update \
+ && apt-get install -y \
+      fontconfig \
+      fonts-dejavu-core \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Apache-Module aktivieren
 RUN a2enmod rewrite headers

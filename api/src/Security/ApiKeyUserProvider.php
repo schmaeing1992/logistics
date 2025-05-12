@@ -1,37 +1,36 @@
 <?php
 // src/Security/ApiKeyUserProvider.php
-
 namespace App\Security;
 
 use App\Repository\ApiKeyRepository;
+use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
-use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
-use Symfony\Component\Security\Core\User\InMemoryUser;
 
-class ApiKeyUserProvider implements UserProviderInterface
+final class ApiKeyUserProvider implements UserProviderInterface
 {
-    public function __construct(private ApiKeyRepository $repo) {}
+    public function __construct(private readonly ApiKeyRepository $repo) {}
 
     /**
-     * Für Symfony ≥6 erforderlich: lädt den User anhand des Identifiers.
+     * Symfony ≥6: lädt den User anhand des Identifiers (hier SHA-256-Hash).
      */
     public function loadUserByIdentifier(string $identifier): UserInterface
     {
-        $entity = $this->repo->findOneBy([
+        $apiKey = $this->repo->findOneBy([
             'tokenHash' => $identifier,
             'isActive'  => true,
         ]);
 
-        if (!$entity) {
-            throw new \Exception('API Key not found');
+        if (!$apiKey) {
+            throw new UserNotFoundException('API Key not found or inactive.');
         }
 
-        return new InMemoryUser('api_client', null, ['ROLE_API']);
+        return new ApiKeyUser($apiKey);
     }
 
     /**
-     * Alias für ältere Symfony-Versionen.
+     * Alias für sehr alte Symfony-Versionen (<6).
      */
     public function loadUserByUsername(string $username): UserInterface
     {
@@ -39,16 +38,15 @@ class ApiKeyUserProvider implements UserProviderInterface
     }
 
     /**
-     * Muss das Interface erfüllen und den gleichen Rückgabetyp haben.
+     * Stateless API ⇒ kein Refresh.
      */
     public function refreshUser(UserInterface $user): UserInterface
     {
-        // Stateless API, kein Refresh
-        throw new UnsupportedUserException('API users cannot be refreshed.');
+        throw new UnsupportedUserException('Stateless authentication – no user refresh.');
     }
 
     public function supportsClass(string $class): bool
     {
-        return InMemoryUser::class === $class;
+        return $class === ApiKeyUser::class;
     }
 }

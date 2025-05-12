@@ -1,47 +1,53 @@
 # config/packages/security.yaml
-
 security:
-    # ==================================
-    # Passwort-Hashing (für evtl. App-User)
-    # ==================================
+    # ==================================================
+    # Passwort-Hashing (für evtl. Backend-/Admin-User)
+    # ==================================================
     password_hashers:
         App\Entity\User: 'auto'
 
-    # ==================================
+    # ==================================================
     # Benutzer- & API-Key-Provider
-    # ==================================
+    # ==================================================
     providers:
-        # Wir verwenden als einzigen Provider unseren ApiKeyUserProvider
+        # Einziger Provider: unser In-Memory-API-Key-User
         api_key_provider:
             id: App\Security\ApiKeyUserProvider
 
-    # ==================================
+    # ==================================================
     # Firewalls
-    # ==================================
+    # ==================================================
     firewalls:
-        # Dev-Firewall (Profiler, Assets)
+        # Symfony-Dev-Tools / Assets
         dev:
             pattern:   ^/(_(profiler|wdt)|css|images|js)/
             security:  false
 
-        # Haupt-Firewall für alle API-Routen
+        # Nelmio-Swagger-UI & JSON – öffentlich
+        docs:
+            pattern:   ^/swagger(?:\.json)?$
+            security:  false          # keinerlei Auth
+
+        # Haupt-API (X-API-KEY / JWT)
         api:
             pattern:   ^/api
             stateless: true
             provider:  api_key_provider
-
-            # Nur unser API-Key-Authenticator
             custom_authenticators:
-                - App\Security\ApiKeyAuthenticator
+                - App\Security\ApiKeyAuthenticator   # X-API-KEY
+                # - App\Security\JwtAuthenticator    # (falls JWT genutzt wird)
 
-        # (Optional) klassische Web-UI / andere Bereiche
+        # (Optional) klassische Web-Seiten
         main:
             lazy:     true
             provider: api_key_provider
 
-    # ==================================
+    # ==================================================
     # Zugriffskontrolle
-    # ==================================
+    # ==================================================
     access_control:
-        # Alles unter /api erfordert ROLE_API (via X-API-KEY)
+        # Nelmio-Swagger-UI & Spec
+        - { path: ^/swagger(?:\.json)?$, roles: PUBLIC_ACCESS }
+
+        # API-Routen erfordern ROLE_API
         - { path: ^/api, roles: ROLE_API }

@@ -27,6 +27,8 @@ class Package
     private Shipment $shipment;
 
     #[ORM\Column(type: 'bigint')]
+    #[Assert\NotNull]
+    #[Assert\Positive]
     #[Groups(['shipment:read','shipment:write'])]
     private int $packageNumber;
 
@@ -34,10 +36,15 @@ class Package
     #[Groups(['shipment:read','shipment:write'])]
     private ?string $reference = null;
 
+    /**
+     * z.B. "Paket", "Europalette", ...
+     * Default-Wert sorgt dafür, dass nie NULL persistiert wird.
+     */
     #[ORM\Column(type: 'string', length: 50)]
+    #[Assert\NotBlank]
     #[Assert\Choice(choices: ['Paket','Europalette','Thermobox','Umschlag','Valoren','Rollen'])]
     #[Groups(['shipment:read','shipment:write'])]
-    private string $packagingType;
+    private string $packagingType = 'Paket';
 
     #[ORM\Column(type: 'integer')]
     #[Assert\Positive]
@@ -67,6 +74,20 @@ class Package
     #[Groups(['shipment:read'])]
     private float $girthCm = 0.0;
 
+    /**
+     * Base64-kodiertes Label für dieses Paket.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['shipment:read','shipment:write'])]
+    private ?string $labelBase64 = null;
+
+    /**
+     * Soft-delete-Zeitstempel.
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[Groups(['shipment:read'])]
+    private ?\DateTimeInterface $cancelledAt = null;
+
     #[ORM\Column(type: 'datetime')]
     #[Groups(['shipment:read'])]
     private \DateTimeInterface $createdAt;
@@ -75,9 +96,9 @@ class Package
     #[Groups(['shipment:read'])]
     private \DateTimeInterface $updatedAt;
 
-    /** 
+    /**
      * Status-Einträge werden **nicht** automatisch serialisiert –
-     * die Listen-Ausgabe erfolgt ausschließlich über den PackageStatus-Controller
+     * die Listen-Ausgabe erfolgt über den PackageStatus-Controller.
      */
     #[ORM\OneToMany(mappedBy: 'package', targetEntity: PackageStatus::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $statuses;
@@ -107,11 +128,13 @@ class Package
 
     private function recalculate(): void
     {
+        // Volumengewicht: L × B × H / 6000
         $this->volumeWeightKg = ($this->lengthCm * $this->widthCm * $this->heightCm) / 6000;
+        // Umfang: 2×(H+B) + L
         $this->girthCm        = (($this->heightCm + $this->widthCm) * 2) + $this->lengthCm;
     }
 
-    // === Getter & Setter ===
+    /* ============================ Getter & Setter ============================ */
 
     public function getId(): Uuid
     {
@@ -216,15 +239,31 @@ class Package
         return $this->girthCm;
     }
 
+    public function getLabelBase64(): ?string
+    {
+        return $this->labelBase64;
+    }
+
+    public function setLabelBase64(?string $labelBase64): self
+    {
+        $this->labelBase64 = $labelBase64;
+        return $this;
+    }
+
+    public function getCancelledAt(): ?\DateTimeInterface
+    {
+        return $this->cancelledAt;
+    }
+
+    public function setCancelledAt(?\DateTimeInterface $cancelledAt): self
+    {
+        $this->cancelledAt = $cancelledAt;
+        return $this;
+    }
+
     public function getCreatedAt(): \DateTimeInterface
     {
         return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeInterface $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-        return $this;
     }
 
     public function getUpdatedAt(): \DateTimeInterface

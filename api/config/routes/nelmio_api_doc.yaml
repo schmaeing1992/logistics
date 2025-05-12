@@ -1,0 +1,9 @@
+# /swagger zeigt Nelmio-Swagger-UI
+nelmio_api_doc_ui:
+    path: /swagger
+    controller: nelmio_api_doc.controller.swagger_ui
+
+# /swagger.json liefert OpenAPI-JSON
+nelmio_api_doc_json:
+    path: /swagger.json
+    controller: nelmio_api_doc.controller.swagger

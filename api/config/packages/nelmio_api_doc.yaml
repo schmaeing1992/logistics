@@ -1,0 +1,19 @@
+nelmio_api_doc:
+  documentation:
+    info:
+      title: Logistics API
+      description: REST-Schnittstelle für Fahrer- & Partner-Apps
+      version: '1.0'
+    components:
+      securitySchemes:
+        BearerAuth:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+        ApiKeyAuth:
+          type: apiKey
+          in: header
+          name: X-API-KEY
+  areas:
+    default:
+      path_patterns: [ '^/api' ]          # nur unsere API-Routes scannen

@@ -23,10 +23,13 @@ class Shipment
     private AbstractUid $id;
 
     #[ORM\Column(type: 'bigint', unique: true)]
+    #[Assert\NotNull]
+    #[Assert\Positive]
     #[Groups(['shipment:read'])]
     private int $trackingNumber;
 
-    // — Absender —
+    /* ================================ Absender =============================== */
+
     #[ORM\Column(type: 'string', length: 100)]
     #[Assert\NotBlank]
     #[Groups(['shipment:read','shipment:write'])]
@@ -90,7 +93,8 @@ class Shipment
     #[Groups(['shipment:read','shipment:write'])]
     private float $pickupExtraFee = 0.0;
 
-    // — Empfänger —
+    /* =============================== Empfänger ============================== */
+
     #[ORM\Column(type: 'string', length: 100)]
     #[Assert\NotBlank]
     #[Groups(['shipment:read','shipment:write'])]
@@ -154,7 +158,27 @@ class Shipment
     #[Groups(['shipment:read','shipment:write'])]
     private float $deliveryExtraFee = 0.0;
 
-    // — Globale Felder —
+    /* =======================================================================
+     * Partner-Bezüge
+     * ==================================================================== */
+
+    #[ORM\ManyToOne(targetEntity: Partner::class)]
+    #[ORM\JoinColumn(name: "booking_partner_id", referencedColumnName: "id", nullable: true)]
+    #[Groups(['shipment:read','shipment:write'])]
+    private ?Partner $bookingPartner = null;
+
+    #[ORM\ManyToOne(targetEntity: Partner::class)]
+    #[ORM\JoinColumn(name: "pickup_partner_id", referencedColumnName: "id", nullable: true)]
+    #[Groups(['shipment:read'])]
+    private ?Partner $pickupPartner = null;
+
+    #[ORM\ManyToOne(targetEntity: Partner::class)]
+    #[ORM\JoinColumn(name: "delivery_partner_id", referencedColumnName: "id", nullable: true)]
+    #[Groups(['shipment:read'])]
+    private ?Partner $deliveryPartner = null;
+
+    /* ============================== Globale Felder ========================= */
+
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['shipment:read','shipment:write'])]
     private ?string $customerReference = null;
@@ -224,15 +248,10 @@ class Shipment
         $this->packages  = new ArrayCollection();
     }
 
-    /**
-     * Füllt volumeWeightTotal und girthMax _unmittelbar vor_ dem Flush,
-     * nachdem alle Package-PrePersist()-Events gelaufen sind.
-     */
     #[ORM\PreFlush]
     public function onPreFlush(PreFlushEventArgs $args): void
     {
         $this->recalculateAggregates();
-        // optional: timestamp aktualisieren
         $this->updatedAt = new \DateTimeImmutable();
     }
 
@@ -253,7 +272,7 @@ class Shipment
         $this->girthMax          = $maxGirth;
     }
 
-    // === Getter & Setter für alle Felder ===
+    /* ========================== Getter & Setter ============================= */
 
     public function getId(): AbstractUid
     {
@@ -563,7 +582,7 @@ class Shipment
     }
 
     public function setCustomerReference(?string $customerReference): self
-    {
+    {  
         $this->customerReference = $customerReference;
         return $this;
     }
@@ -711,6 +730,40 @@ class Shipment
         return $this;
     }
 
+     /* ---------------- Partner-Felder ---------------- */
+     public function getBookingPartner(): ?Partner
+     {
+         return $this->bookingPartner;
+     }
+ 
+     public function setBookingPartner(?Partner $p): self
+     {
+         $this->bookingPartner = $p;
+         return $this;
+     }
+ 
+     public function getPickupPartner(): ?Partner
+     {
+         return $this->pickupPartner;
+     }
+ 
+     public function setPickupPartner(?Partner $p): self
+     {
+         $this->pickupPartner = $p;
+         return $this;
+     }
+ 
+     public function getDeliveryPartner(): ?Partner
+     {
+         return $this->deliveryPartner;
+     }
+ 
+     public function setDeliveryPartner(?Partner $p): self
+     {
+         $this->deliveryPartner = $p;
+         return $this;
+     }
+
     /**
      * @return Collection<int, Package>
      */
@@ -725,7 +778,6 @@ class Shipment
             $this->packages->add($package);
             $package->setShipment($this);
         }
-
         return $this;
     }
 
@@ -736,7 +788,6 @@ class Shipment
                 $package->setShipment(null);
             }
         }
-
         return $this;
     }
 }
